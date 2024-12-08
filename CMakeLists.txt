@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.0)
+
 project(todo C)
+# Include the custom FindSQLite3.cmake
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 
-set(CMAKE_C_STANDARD 23)
+# Locate SQLite3
+find_package(SQLite3 REQUIRED)
 
-add_executable(todo main.c)
+# Include directories
+include_directories(${SQLITE3_INCLUDE_DIR})
+
+add_executable(main main.c)
+
+target_link_libraries(main ${SQLITE3_LIBRARY})
+
