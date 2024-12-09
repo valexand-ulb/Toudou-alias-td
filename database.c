@@ -33,7 +33,7 @@ int expand_tilde(const char *path, char *expanded_path, size_t size)
   return 0;
 }
 
-int create_database_table(int rc, char * err_msg) {
+int create_database_table(char * err_msg) {
   const char *sql =
       "CREATE TABLE IF NOT EXISTS todos ("
       "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -41,7 +41,7 @@ int create_database_table(int rc, char * err_msg) {
       "datetime DATETIME NOT NULL);";
 
   // Execute the SQL command
-  rc = sqlite3_exec(database, sql, 0, 0, &err_msg);
+  int rc = sqlite3_exec(database, sql, 0, 0, &err_msg);
   if (rc != SQLITE_OK) {
     err("Failed to initialize database '%s': %s", DATABASE_NAME,
             err_msg);
@@ -49,6 +49,29 @@ int create_database_table(int rc, char * err_msg) {
     sqlite3_close(database);
     return 0;
   }
+  return 1;
+}
+
+int fetch_first_n_todos(int max_line, char **array) {
+  // TODO ; Not working SQL error 21 -> type mismatch
+  sqlite3_stmt *stmt = NULL;
+  const char *sql = "SELECT id, content, datetime FROM todos ORDER BY id LIMIT ?;";
+  // prepare sql statement
+  int rc = sqlite3_prepare_v2(database, sql, -1, &stmt, NULL);
+  if (rc != SQLITE_OK) {
+    err("Failed to prepare statement: %s\n", sqlite3_errmsg(database));
+    return 0;
+  }
+  info("Fetching the first %d Todos by ID:\n", max_line);
+
+  // assing
+  rc = sqlite3_bind_int(stmt, 1, max_line);
+  if (rc != SQLITE_OK) {
+    err( "Failed to bind limit: %s\n", sqlite3_errmsg(database));
+    sqlite3_finalize(stmt);
+    return 0;
+  }
+
   return 1;
 }
 
@@ -82,7 +105,7 @@ int initialize_database() {
     return 0;
   }
 
-  rc = create_database_table(rc, err_msg);
+  rc = create_database_table(err_msg);
 
   // Success message
   info("Database '%s' initialized successfully at: %s", DATABASE_NAME, fullpath);

@@ -9,7 +9,7 @@
 #define DATABASE_PATH "~/.local/share/todo/"
 
 int initialize_database();
-
+int fetch_first_n_todos(int max_line, char **array);
 
 
 #endif //DATABASE_H

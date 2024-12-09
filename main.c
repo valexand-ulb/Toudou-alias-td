@@ -17,6 +17,7 @@ typedef struct
 int function_list() {
   info("List task");
   char *todos[3] = {"Alex", "Bob", "Claude"};
+  fetch_first_n_todos(3, todos);
   for (unsigned i=0; i < MAX_PRINT_LINE; ++i) {
     printf("%s\n", todos[i]);
   }
