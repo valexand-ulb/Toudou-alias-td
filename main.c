@@ -4,6 +4,8 @@
 #include "database.h"
 #include "log.h"
 
+#define MAX_PRINT_LINE 3
+
 // Define a structure for mapping commands to actions
 typedef struct
 {
@@ -14,6 +16,10 @@ typedef struct
 
 int function_list() {
   info("List task");
+  char *todos[3] = {"Alex", "Bob", "Claude"};
+  for (unsigned i=0; i < MAX_PRINT_LINE; ++i) {
+    printf("%s\n", todos[i]);
+  }
   return 0;
 }
 
