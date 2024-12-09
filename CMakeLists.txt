@@ -10,7 +10,10 @@ find_package(SQLite3 REQUIRED)
 # Include directories
 include_directories(${SQLITE3_INCLUDE_DIR})
 
-add_executable(main main.c)
+add_executable(td main.c
+        database.h
+        database.c
+        log.h)
 
-target_link_libraries(main ${SQLITE3_LIBRARY})
+target_link_libraries(td ${SQLITE3_LIBRARY})
 
