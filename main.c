@@ -62,6 +62,8 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  //_debug_fill_database();
+
   if (!check_arguments(argc, argv)) {
     err("Error program Execution...");
     exit(1);

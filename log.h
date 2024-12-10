@@ -16,7 +16,7 @@
 #define info(msg, ...) printf(" - [i] " msg "\n", ##__VA_ARGS__)
 #define warn(msg, ...) printf(" - [!] " msg "\n", ##__VA_ARGS__)
 #define okay(msg, ...) printf(" - [v] " msg "\n", ##__VA_ARGS__)
-#define err(msg, ...) fprintf(stderr, " - [x] " msg "\n", ##__VA_ARGS__)
+#define err(msg, ...) fprintf(stderr, "- [x] " msg "\n", ##__VA_ARGS__)
 #else
 #define info(msg, ...)
 #define warn(msg, ...)
