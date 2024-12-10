@@ -4,16 +4,16 @@
 find_path(SQLITE3_INCLUDE_DIR sqlite3.h)
 find_library(SQLITE3_LIBRARY NAMES sqlite3)
 
-if(SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
+if (SQLITE3_INCLUDE_DIR AND SQLITE3_LIBRARY)
     set(SQLITE3_FOUND TRUE)
-else()
+else ()
     set(SQLITE3_FOUND FALSE)
-endif()
+endif ()
 
-if(SQLITE3_FOUND)
+if (SQLITE3_FOUND)
     message(STATUS "Found SQLite3: ${SQLITE3_LIBRARY}")
-else()
+else ()
     message(FATAL_ERROR "SQLite3 not found!")
-endif()
+endif ()
 
 mark_as_advanced(SQLITE3_INCLUDE_DIR SQLITE3_LIBRARY)

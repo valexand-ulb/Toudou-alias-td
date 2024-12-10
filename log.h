@@ -22,6 +22,6 @@
 #define warn(msg, ...)
 #define okay(msg, ...)
 #define err(msg, ...)
-#endif //DEBUG
+#endif  // DEBUG
 
-#endif //LOG_H
+#endif  // LOG_H

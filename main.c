@@ -7,20 +7,16 @@
 #define MAX_PRINT_LINE 3
 
 // Define a structure for mapping commands to actions
-typedef struct
-{
+typedef struct {
   const char *command;
   int argc_required;
-  int (*predicate)(void); // function attributed to an argument
+  int (*predicate)(void);  // function attributed to an argument
 } Command;
 
 int function_list() {
   info("List task");
-  char *todos[3] = {"Alex", "Bob", "Claude"};
-  fetch_first_n_todos(3, todos);
-  for (unsigned i=0; i < MAX_PRINT_LINE; ++i) {
-    printf("%s\n", todos[i]);
-  }
+  char *array[256];
+  fetch_first_n_todos(10,array);
   return 0;
 }
 
@@ -49,13 +45,10 @@ static const Command commands[] = {
 
 #define COMMAND_COUNT (sizeof(commands) / sizeof(commands[0]))
 
-int check_arguments(int argc, char **argv)
-{
-  for (size_t i = 0; i < COMMAND_COUNT; ++i)
-  {
+int check_arguments(int argc, char **argv) {
+  for (size_t i = 0; i < COMMAND_COUNT; ++i) {
     if (argc == commands[i].argc_required &&
-      strcmp(argv[1], commands[i].command) == 0)
-    {
+        strcmp(argv[1], commands[i].command) == 0) {
       commands[i].predicate();
       return 1;
     }
@@ -63,19 +56,16 @@ int check_arguments(int argc, char **argv)
   return 0;
 }
 
-int main(int argc, char **argv)
-{
-
-  if (!initialize_database(DATABASE_PATH, DATABASE_NAME))
-  {
+int main(int argc, char **argv) {
+  if (!initialize_database(DATABASE_PATH, DATABASE_NAME)) {
     err("Error in database initialisation...");
     exit(1);
   }
 
-  if (!check_arguments(argc, argv))
-  {
-    err("Error in database initialisation...");
+  if (!check_arguments(argc, argv)) {
+    err("Error program Execution...");
     exit(1);
   }
 
+  close_database();
 }
