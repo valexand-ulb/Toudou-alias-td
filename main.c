@@ -19,7 +19,7 @@ int function_list(int argc, char** argv)
     if (argc == 2)
     {
         info("function_list with default arg");
-        char string[MAX_BUFFER_SIZE*MAX_PRINT_LINE];
+        char string[MAX_BUFFER_SIZE*MAX_PRINT_LINE] = "\0";
         fetch_first_n_todos(MAX_PRINT_LINE, string);
         printf("%s", string);
     }
@@ -41,7 +41,6 @@ int function_add(int argc, char **argv)
     return 0;
 }
 
-// TODO : correct this function with management of undeleted entry
 int function_done(int argc, char **argv)
 {
     info("Remove task");
@@ -49,6 +48,7 @@ int function_done(int argc, char **argv)
     if (!remove_todo(id))
     {
         warn("todo not removed");
+        close_database();
         exit(1);
     }
     printf("todo of id '%d' removed\n", id);

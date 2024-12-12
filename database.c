@@ -39,7 +39,8 @@ sqlite3_stmt* prepare_statement(const char* sql)
 
 int execute_statement(sqlite3_stmt* stmt, char* command)
 {
-    int rc = sqlite3_step(stmt);
+
+    const int rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
     {
         err("Failed to execute statement: %s", sqlite3_errmsg(database));
@@ -55,16 +56,25 @@ int execute_statement(sqlite3_stmt* stmt, char* command)
 
 int create_database_table()
 {
-    const char* sql =
+    const char* sql_table =
         "CREATE TABLE IF NOT EXISTS todos ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "content TEXT NOT NULL, "
         "datetime INTEGER NOT NULL);";
 
-    sqlite3_stmt* stmt = prepare_statement(sql);
-    int rc = execute_statement(stmt, "create_database_table");
+    // Optimized trigger to reset IDs from 1 to n aft
+
+    sqlite3_stmt* stmt = NULL;
+    int rc = SQLITE_OK;
+
+    // Prepare and execute the table creation statement
+    stmt = prepare_statement(sql_table);
+
+    rc = execute_statement(stmt, "create_database_table");
+
     sqlite3_finalize(stmt);
-    return rc == SQLITE_DONE;
+
+    return SQLITE_OK;
 }
 
 int initialize_database()
@@ -152,7 +162,7 @@ int add_todo(const char* content, const long long timestamp)
     }
 
     // Execute the statement
-    int rc = execute_statement(stmt, "add_todo");
+    const int rc = execute_statement(stmt, "add_todo");
 
     // Finalize the statement and close the database
     sqlite3_finalize(stmt);
@@ -175,10 +185,23 @@ int remove_todo(const unsigned todo_id)
 
     // Execute the statement
     const int rc = execute_statement(stmt, "remove_todo");
+    if (rc != SQLITE_DONE)
+    {
+        err("Failed to execute delete statement: %s\n", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return 1;
+    }
 
-    // Finalize the statement and close the database
+    // Check if a row was deleted
+    const int changes = sqlite3_changes(database);
     sqlite3_finalize(stmt);
-    return rc == SQLITE_DONE;
+
+    if (changes == 0)
+    {
+        warn("no row has been deleted");
+        return 0;
+    }
+    return rc;
 }
 
 int fetch_todo(sqlite3_stmt* stmt, todo_type todo_list[])
@@ -229,19 +252,21 @@ int fetch_first_n_todos(const int max_line, char *string)
     }
 
     sqlite3_finalize(stmt);
-
-    string[0] = '\0'; // ensure string empty before concatanation
     for (unsigned i = 0; i < sizeof(todo_list) / sizeof(todo_type); ++i)
     {
-        char formatted_todo[256];
-        char datetime_str[32];
+        if (todo_list[i].timestamp) // if todo_element is not default
+        {
+            char formatted_todo[256];
+            char datetime_str[32];
 
-        timestamp_to_string(todo_list[i].timestamp, datetime_str, sizeof(datetime_str));
+            timestamp_to_string(todo_list[i].timestamp, datetime_str, sizeof(datetime_str));
 
-        snprintf(formatted_todo, sizeof(formatted_todo), "%d : %s - %s\n",
-                 todo_list[i].id, todo_list[i].content, datetime_str);
+            snprintf(formatted_todo, sizeof(formatted_todo), "%d : %s - %s\n",
+                     todo_list[i].id, todo_list[i].content, datetime_str);
 
-        strncat(string, formatted_todo, max_line * sizeof(todo_list[0]) - strlen(string) - 1);
+            strncat(string, formatted_todo, max_line * sizeof(todo_list[0]) - strlen(string) - 1);
+        }
     }
+
     return rc == SQLITE_DONE;
 }
