@@ -5,52 +5,49 @@
 #include "log.h"
 
 
-// Define type for different predicate signature
-typedef int (*PredicateTypeListDefault)(void);
-typedef int (*PredicateTypeListInt)(int);
-typedef int (*PredicateTypeRemoveDefault)(int);
-
 // Define a structure for mapping commands to actions
 typedef struct
 {
     const char* command;
     int argc_required;
-    void *predicate; // function attributed to an argument
+    int (*predicate)(int, char **); // function attributed to an argument
     int predicate_type;
 } Command;
 
-int function_list_default()
+int function_list(int argc, char** argv)
 {
-    info("function_list_default");
-    char string[MAX_BUFFER_SIZE*MAX_PRINT_LINE];
-    fetch_first_n_todos(MAX_PRINT_LINE, string);
-    printf("%s", string);
+    if (argc == 2)
+    {
+        info("function_list with default arg");
+        char string[MAX_BUFFER_SIZE*MAX_PRINT_LINE];
+        fetch_first_n_todos(MAX_PRINT_LINE, string);
+        printf("%s", string);
+    }
+    else if (argc == 3)
+    {
+        info("function_list with int arg");
+        int maxline = atoi(argv[2]);
+        char string[MAX_BUFFER_SIZE*maxline];
+        fetch_first_n_todos(maxline, string);
+        printf("%s", string);
+    }
 
     return 0;
 }
 
-int function_list_int(int number_of_line)
-{
-    info("function_list_int");
-    char string[MAX_BUFFER_SIZE*number_of_line];
-    fetch_first_n_todos(number_of_line, string);
-    printf("%s", string);
-    return 0;
-}
-
-int function_add()
+int function_add(int argc, char **argv)
 {
     info("Add task");
     return 0;
 }
 
-int function_done(int todo_id)
+int function_done(int argc, char **argv)
 {
     info("Remove task");
     return 0;
 }
 
-int function_time()
+int function_time(int argc, char **argv)
 {
     info("Modify time of a task");
     return 0;
@@ -58,10 +55,10 @@ int function_time()
 
 // Array of supported commands
 static const Command commands[] = {
-    {"list", 2, function_list_default, 1},
-    {"list", 3, function_list_int, 2},
+    {"list", 2, function_list},
+    {"list", 3, function_list},
     {"add", 4, function_add},
-    {"done", 3, function_done, 3},
+    {"done", 3, function_done},
     {"time", 3, function_time},
 };
 
@@ -75,6 +72,7 @@ int check_arguments(int argc, char** argv)
             strcmp(argv[1], commands[i].command) == 0)
         {
             // function execution here
+            commands[i].predicate(argc, argv);
             return 1;
         }
     }
