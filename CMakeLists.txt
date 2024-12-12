@@ -13,7 +13,9 @@ include_directories(${SQLITE3_INCLUDE_DIR})
 add_executable(td main.c
         database.h
         database.c
-        log.h)
+        log.h
+        utils.c
+        utils.h)
 
 target_link_libraries(td ${SQLITE3_LIBRARY})
 
