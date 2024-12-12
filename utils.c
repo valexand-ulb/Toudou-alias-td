@@ -4,6 +4,8 @@
 
 #include "utils.h"
 
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "log.h"
@@ -23,4 +25,21 @@ int timestamp_to_string(time_t timestamp, char *buffer, size_t buffer_size) {
     }
 
     return 0; // Success
+}
+
+int expand_tilde(const char* path, char* expanded_path, size_t size)
+{
+    if (path[0] == '~')
+    {
+        const char* home = getenv("HOME");
+        if (home)
+        {
+            snprintf(expanded_path, size, "%s%s", home, path + 1);
+            return 1;
+        }
+        err("Error : Unable to resolve '~'.");
+        return 0;
+    }
+    strncpy(expanded_path, path, size);
+    return 0;
 }

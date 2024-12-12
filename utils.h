@@ -7,4 +7,5 @@
 #include <time.h>
 
 int timestamp_to_string(time_t timestamp,char *buffer, size_t buffer_size);
+int expand_tilde(const char* path, char* expanded_path, size_t size);
 #endif //UTILS_H

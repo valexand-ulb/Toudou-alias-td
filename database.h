@@ -14,10 +14,20 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void _debug_fill_database();
-int add_todo(const char* event, long long timestamp);
+// BASE STATEMENT FUNCTIONS
 int initialize_database();
-int fetch_first_n_todos(const int max_line, char *string);
+void _debug_fill_database();
 int close_database();
+
+// SIMPLE SQL REQUEST
+
+int add_todo(const char* event, long long timestamp);
+
+int remove_todo(const unsigned todo_id);
+
+// COMPOSED SQL REQUEST
+
+int fetch_first_n_todos(const int max_line, char *string);
+
 
 #endif  // DATABASE_H

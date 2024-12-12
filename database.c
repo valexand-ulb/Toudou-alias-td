@@ -2,7 +2,6 @@
 
 #include <errno.h>
 #include <sqlite3.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -21,24 +20,7 @@ typedef struct
     time_t timestamp;
 } todo_type;
 
-// SQL UNRELATED
 
-int expand_tilde(const char* path, char* expanded_path, size_t size)
-{
-    if (path[0] == '~')
-    {
-        const char* home = getenv("HOME");
-        if (home)
-        {
-            snprintf(expanded_path, size, "%s%s", home, path + 1);
-            return 1;
-        }
-        err("Error : Unable to resolve '~'.");
-        return 0;
-    }
-    strncpy(expanded_path, path, size);
-    return 0;
-}
 
 // BASE STATEMENT FUNCTIONS
 
@@ -150,18 +132,49 @@ void _debug_fill_database()
 int add_todo(const char* content, const long long timestamp)
 {
     const char* sql =
-        "INSERT INTO todos (content, datetime) VALUES (?,?);";;
+        "INSERT INTO todos (content, datetime) VALUES (?,?);";
 
     // Prepare the SQL statement
     sqlite3_stmt* stmt = prepare_statement(sql);
     if (!stmt) return 0;
 
-    // Bind the parameters
-    sqlite3_bind_text(stmt, 1, content, -1, SQLITE_STATIC); // Bind the content
-    sqlite3_bind_int64(stmt, 2, timestamp);
+    if (sqlite3_bind_text(stmt, 1, content, -1, SQLITE_STATIC) != SQLITE_OK)
+    {
+        err("Failed to bind content: %s\n", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+    if (sqlite3_bind_int64(stmt, 2, timestamp) != SQLITE_OK)
+    {
+        err("Failed to bind datetime: %s\n", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return 1;
+    }
 
     // Execute the statement
     int rc = execute_statement(stmt, "add_todo");
+
+    // Finalize the statement and close the database
+    sqlite3_finalize(stmt);
+    return rc == SQLITE_DONE;
+}
+
+int remove_todo(const unsigned todo_id)
+{
+    const char* sql =
+        "DELETE FROM todos WHERE id = ?";
+
+    sqlite3_stmt *stmt = prepare_statement(sql);
+
+    if (sqlite3_bind_int(stmt, 1, todo_id) != SQLITE_OK)
+        {
+        err("Failed to bind id: %s\n", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+
+    // Execute the statement
+    const int rc = execute_statement(stmt, "remove_todo");
 
     // Finalize the statement and close the database
     sqlite3_finalize(stmt);

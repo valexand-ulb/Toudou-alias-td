@@ -41,9 +41,18 @@ int function_add(int argc, char **argv)
     return 0;
 }
 
+// TODO : correct this function with management of undeleted entry
 int function_done(int argc, char **argv)
 {
     info("Remove task");
+    const unsigned id = atoi(argv[2]);
+    if (!remove_todo(id))
+    {
+        warn("todo not removed");
+        exit(1);
+    }
+    printf("todo of id '%d' removed\n", id);
+    function_list(2, argv);
     return 0;
 }
 
