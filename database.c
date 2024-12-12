@@ -217,6 +217,7 @@ int fetch_first_n_todos(const int max_line, char *string)
 
     sqlite3_finalize(stmt);
 
+    string[0] = '\0'; // ensure string empty before concatanation
     for (unsigned i = 0; i < sizeof(todo_list) / sizeof(todo_type); ++i)
     {
         char formatted_todo[256];

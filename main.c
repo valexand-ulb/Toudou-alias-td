@@ -5,22 +5,36 @@
 #include "log.h"
 
 
+// Define type for different predicate signature
+typedef int (*PredicateTypeListDefault)(void);
+typedef int (*PredicateTypeListInt)(int);
+typedef int (*PredicateTypeRemoveDefault)(int);
+
 // Define a structure for mapping commands to actions
 typedef struct
 {
     const char* command;
     int argc_required;
-    int (*predicate)(void); // function attributed to an argument
+    void *predicate; // function attributed to an argument
+    int predicate_type;
 } Command;
 
-int function_list()
+int function_list_default()
 {
-    info("List task");
-    warn("Test warning");
-    char string[MAX_BUFFER_SIZE*MAX_PRINT_LINE] = "\0";
+    info("function_list_default");
+    char string[MAX_BUFFER_SIZE*MAX_PRINT_LINE];
     fetch_first_n_todos(MAX_PRINT_LINE, string);
     printf("%s", string);
 
+    return 0;
+}
+
+int function_list_int(int number_of_line)
+{
+    info("function_list_int");
+    char string[MAX_BUFFER_SIZE*number_of_line];
+    fetch_first_n_todos(number_of_line, string);
+    printf("%s", string);
     return 0;
 }
 
@@ -30,7 +44,7 @@ int function_add()
     return 0;
 }
 
-int function_done()
+int function_done(int todo_id)
 {
     info("Remove task");
     return 0;
@@ -44,10 +58,10 @@ int function_time()
 
 // Array of supported commands
 static const Command commands[] = {
-    {"list", 2, function_list},
-    {"list", 3, function_list},
+    {"list", 2, function_list_default, 1},
+    {"list", 3, function_list_int, 2},
     {"add", 4, function_add},
-    {"done", 3, function_done},
+    {"done", 3, function_done, 3},
     {"time", 3, function_time},
 };
 
@@ -60,7 +74,7 @@ int check_arguments(int argc, char** argv)
         if (argc == commands[i].argc_required &&
             strcmp(argv[1], commands[i].command) == 0)
         {
-            commands[i].predicate();
+            // function execution here
             return 1;
         }
     }
@@ -75,7 +89,7 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    _debug_fill_database();
+    //_debug_fill_database();
 
     if (!check_arguments(argc, argv))
     {
