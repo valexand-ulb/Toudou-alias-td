@@ -49,13 +49,14 @@ int execute_statement(sqlite3_stmt* stmt, const char* command)
     {
         info("[%s] executed successfully.", command);
     }
-    else if (rc == SQLITE_ROW)
-    {
-        warn("[%s] executed but returned data (unexpected for non-SELECT).", command);
-    }
+    // TODO : Verify if coherent for managing errors
+    // else if (rc == SQLITE_ROW)
+    // {
+    //     warn("[%s] executed but returned data (unexpected for non-SELECT).", command);
+    // }
     else
     {
-        err("Failed to execute statement for '%s': %s", command, sqlite3_errmsg(database));
+        warn("[%s] Statement return other rc code than SQLITE_DONE (101): %d", command, rc);
     }
 
     return rc;
@@ -293,7 +294,7 @@ int fetch_first_n_todos(const int max_line, char* string)
         err("Failed to prepare statement: %s", sqlite3_errmsg(database));
     }
 
-    int rc = fetch_todo(stmt, todo_list);
+    const int rc = fetch_todo(stmt, todo_list);
 
     if (rc != SQLITE_DONE)
     {
@@ -305,6 +306,7 @@ int fetch_first_n_todos(const int max_line, char* string)
     {
         if (todo_list[i].timestamp) // if todo_element is not default
         {
+            if (i == 0) strcpy(string, ""); // reset string
             char formatted_todo[256];
             char datetime_str[32];
 

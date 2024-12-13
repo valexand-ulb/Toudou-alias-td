@@ -27,6 +27,11 @@ int function_list(int argc, char** argv)
     {
         info("function_list with int arg");
         int maxline = atoi(argv[2]);
+        if (maxline > get_size_of_table())
+        {
+            err("The number of todo asked is too large, defaulting to 3");
+            maxline = 3;
+        }
         char string[MAX_BUFFER_SIZE * maxline];
         fetch_first_n_todos(maxline, string);
         printf("%s", string);
