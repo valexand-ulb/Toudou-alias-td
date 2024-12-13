@@ -20,7 +20,7 @@ void _debug_fill_database();
 int close_database();
 
 // SIMPLE SQL REQUEST
-
+int get_size_of_table();
 int add_todo(const char* event, long long timestamp);
 
 int remove_todo(const unsigned todo_id);

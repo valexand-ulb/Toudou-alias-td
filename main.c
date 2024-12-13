@@ -10,7 +10,7 @@ typedef struct
 {
     const char* command;
     int argc_required;
-    int (*predicate)(int, char **); // function attributed to an argument
+    int (*predicate)(int, char**); // function attributed to an argument
     int predicate_type;
 } Command;
 
@@ -19,7 +19,7 @@ int function_list(int argc, char** argv)
     if (argc == 2)
     {
         info("function_list with default arg");
-        char string[MAX_BUFFER_SIZE*MAX_PRINT_LINE] = "\0";
+        char string[MAX_BUFFER_SIZE * MAX_PRINT_LINE] = "There is no todo left\0";
         fetch_first_n_todos(MAX_PRINT_LINE, string);
         printf("%s", string);
     }
@@ -27,7 +27,7 @@ int function_list(int argc, char** argv)
     {
         info("function_list with int arg");
         int maxline = atoi(argv[2]);
-        char string[MAX_BUFFER_SIZE*maxline];
+        char string[MAX_BUFFER_SIZE * maxline];
         fetch_first_n_todos(maxline, string);
         printf("%s", string);
     }
@@ -35,13 +35,13 @@ int function_list(int argc, char** argv)
     return 0;
 }
 
-int function_add(int argc, char **argv)
+int function_add(int argc, char** argv)
 {
     info("Add task");
     return 0;
 }
 
-int function_done(int argc, char **argv)
+int function_done(int argc, char** argv)
 {
     info("Remove task");
     const unsigned id = atoi(argv[2]);
@@ -56,7 +56,7 @@ int function_done(int argc, char **argv)
     return 0;
 }
 
-int function_time(int argc, char **argv)
+int function_time(int argc, char** argv)
 {
     info("Modify time of a task");
     return 0;
@@ -95,6 +95,9 @@ int main(int argc, char** argv)
         err("Error in database initialisation...");
         exit(1);
     }
+
+    int size = get_size_of_table();
+    printf("Table size: %d\n", size);
 
     //_debug_fill_database();
 
