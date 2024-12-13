@@ -89,6 +89,7 @@ int create_database_table()
         return rc;
     }
 
+    // update size of the table
     // Clean up
     sqlite3_finalize(stmt);
     okay("'create_database_table' executed successfully.");
@@ -151,7 +152,7 @@ void _debug_fill_database()
 
 // SIMPLE SQL REQUEST
 
-int get_size_of_table()
+int get_table_size()
 {
     int row_count = 0;
     const char* sql =
@@ -213,20 +214,24 @@ int add_todo(const char* content, const long long timestamp)
 
 int remove_todo(const unsigned todo_id)
 {
-    const char* sql =
+    const char* sql_delete =
         "DELETE FROM todos WHERE id = ?";
+    const char * sql_update_id =
+        "";
 
-    sqlite3_stmt* stmt = prepare_statement(sql);
+    sqlite3_stmt* stmt = prepare_statement(sql_delete);
     if (!stmt)
     {
         err("Failed to prepare statement: %s", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
     }
 
     if (sqlite3_bind_int(stmt, 1, todo_id) != SQLITE_OK)
     {
         err("Failed to bind id: %s\n", sqlite3_errmsg(database));
         sqlite3_finalize(stmt);
-        return 1;
+        return SQLITE_ERROR;
     }
 
     // Execute the statement
@@ -235,7 +240,7 @@ int remove_todo(const unsigned todo_id)
     {
         err("Failed to execute delete statement: %s\n", sqlite3_errmsg(database));
         sqlite3_finalize(stmt);
-        return 1;
+        return SQLITE_ERROR;
     }
 
     // Check if a row was deleted
@@ -278,20 +283,24 @@ int fetch_todo(sqlite3_stmt* stmt, todo_type todo_list[])
 
 // COMPOSED SQL REQUEST
 
-int fetch_first_n_todos(const int max_line, char* string)
+int fetch_todos(const size_t table_size,int line_to_print,  char* string)
 {
-    char sql[128];
-    todo_type todo_list[max_line] = {};
+    info("Fetching %d rows from table and printing %d lines", table_size, line_to_print);
+    const char sql[128] = "SELECT * from todos";
 
-    snprintf(sql, sizeof(sql),
-             "SELECT id, content, datetime FROM todos ORDER BY id LIMIT %d;",
-             max_line);
+    if (table_size < line_to_print)
+    {
+        warn("Line to print bigger than table size. Reduced to fit");
+        line_to_print = table_size;
+    }
 
+    todo_type todo_list[table_size] = {};
     // Prepare the SQL statement
     sqlite3_stmt* stmt = prepare_statement(sql);
     if (!stmt)
     {
         err("Failed to prepare statement: %s", sqlite3_errmsg(database));
+        return SQLITE_ERROR;
     }
 
     const int rc = fetch_todo(stmt, todo_list);
@@ -299,10 +308,11 @@ int fetch_first_n_todos(const int max_line, char* string)
     if (rc != SQLITE_DONE)
     {
         err("Error executing query: %s\n", sqlite3_errmsg(database));
+        return SQLITE_ERROR;
     }
 
     sqlite3_finalize(stmt);
-    for (unsigned i = 0; i < sizeof(todo_list) / sizeof(todo_type); ++i)
+    for (unsigned i = 0; i < line_to_print; ++i)
     {
         if (todo_list[i].timestamp) // if todo_element is not default
         {
@@ -315,7 +325,7 @@ int fetch_first_n_todos(const int max_line, char* string)
             snprintf(formatted_todo, sizeof(formatted_todo), "%d : %s - %s\n",
                      todo_list[i].id, todo_list[i].content, datetime_str);
 
-            strncat(string, formatted_todo, max_line * sizeof(todo_list[0]) - strlen(string) - 1);
+            strncat(string, formatted_todo, line_to_print * sizeof(todo_list[0]) - strlen(string) - 1);
         }
     }
 

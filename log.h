@@ -19,10 +19,10 @@
 
 // Macro for debug message
 #if DEBUG
-#define info(msg, ...) printf("[i] [%s] " msg ANSI_RESET"\n", __func__, ##__VA_ARGS__)
-#define warn(msg, ...) printf( ANSI_YELLOW"[!] [%s] " msg ANSI_RESET"\n", __func__, ##__VA_ARGS__)
-#define okay(msg, ...) printf( ANSI_GREEN "[v] [%s] " msg ANSI_RESET "\n", __func__, ##__VA_ARGS__)
-#define err(msg, ...) fprintf(stderr, ANSI_RED "[x] [%s] " msg ANSI_RESET "\n", __func__, ##__VA_ARGS__)
+#define info(msg, ...) printf(" [i] [%s] " msg ANSI_RESET"\n", __func__, ##__VA_ARGS__)
+#define warn(msg, ...) printf( ANSI_YELLOW" [!] [%s] " msg ANSI_RESET"\n", __func__, ##__VA_ARGS__)
+#define okay(msg, ...) printf( ANSI_GREEN " [v] [%s] " msg ANSI_RESET "\n", __func__, ##__VA_ARGS__)
+#define err(msg, ...) fprintf(stderr, ANSI_RED " [x] [%s] " msg ANSI_RESET "\n", __func__, ##__VA_ARGS__)
 #else
 #define info(msg, ...)
 #define warn(msg, ...)

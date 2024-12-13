@@ -5,6 +5,7 @@
 #include "log.h"
 
 
+int table_size = 0;
 // Define a structure for mapping commands to actions
 typedef struct
 {
@@ -20,20 +21,20 @@ int function_list(int argc, char** argv)
     {
         info("function_list with default arg");
         char string[MAX_BUFFER_SIZE * MAX_PRINT_LINE] = "There is no todo left\0";
-        fetch_first_n_todos(MAX_PRINT_LINE, string);
+        fetch_todos(table_size, MAX_PRINT_LINE, string);
         printf("%s", string);
     }
     else if (argc == 3)
     {
         info("function_list with int arg");
         int maxline = atoi(argv[2]);
-        if (maxline > get_size_of_table())
+        if (maxline > get_table_size())
         {
             err("The number of todo asked is too large, defaulting to 3");
             maxline = 3;
         }
         char string[MAX_BUFFER_SIZE * maxline];
-        fetch_first_n_todos(maxline, string);
+        fetch_todos(table_size, maxline, string);
         printf("%s", string);
     }
 
@@ -50,11 +51,10 @@ int function_done(int argc, char** argv)
 {
     info("Remove task");
     const unsigned id = atoi(argv[2]);
-    if (!remove_todo(id))
+    if ( id > table_size || !remove_todo(id))
     {
         warn("todo not removed");
-        close_database();
-        exit(1);
+        printf("No todo affected\n");
     }
     printf("todo of id '%d' removed\n", id);
     function_list(2, argv);
@@ -101,10 +101,14 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    int size = get_size_of_table();
-    printf("Table size: %d\n", size);
+    table_size = get_table_size();
+    info("table size: %d\n", table_size);
 
-    //_debug_fill_database();
+    if (table_size <= 10)
+    {
+        _debug_fill_database();
+        table_size = get_table_size();
+    }
 
     if (!check_arguments(argc, argv))
     {
