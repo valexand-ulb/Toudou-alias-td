@@ -14,12 +14,7 @@
 sqlite3* database = NULL;
 
 
-typedef struct
-{
-    int id;
-    char content[256];
-    time_t timestamp;
-} todo_type;
+
 
 
 // BASE STATEMENT FUNCTIONS
@@ -142,7 +137,7 @@ int close_database() { return sqlite3_close(database); }
 
 void _debug_fill_database()
 {
-    for (unsigned i = 0; i < 3; ++i)
+    for (unsigned i = 0; i < 10; ++i)
     {
         char event[128];
         snprintf(event, sizeof(event), "debug_text_%d", i);
@@ -216,8 +211,6 @@ int remove_todo(const unsigned todo_id)
 {
     const char* sql_delete =
         "DELETE FROM todos WHERE id = ?";
-    const char * sql_update_id =
-        "";
 
     sqlite3_stmt* stmt = prepare_statement(sql_delete);
     if (!stmt)
@@ -250,10 +243,57 @@ int remove_todo(const unsigned todo_id)
     if (changes == 0)
     {
         warn("no row has been deleted");
-        return 0;
+        return SQLITE_ERROR;
     }
-    return rc;
+    return SQLITE_OK;
 }
+
+int rearrange_todo(int table_size, todo_type todo_list[])
+{
+    const char* sql = "UPDATE todos SET id = ? WHERE id = ?;";
+    sqlite3_stmt* stmt = prepare_statement(sql);
+    if (!stmt)
+    {
+        err("Failed to prepare statement: %s", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
+    }
+
+    for (unsigned i = 0; i < table_size; ++i)
+    {
+        info("rearranging todo of id %i and new id %i", todo_list[i], i+1);
+        if (sqlite3_bind_int(stmt, 1, i+1) != SQLITE_OK) // Bind new id
+        {
+            err("Failed to bind id: %s\n", sqlite3_errmsg(database));
+            sqlite3_finalize(stmt);
+            return SQLITE_ERROR;
+        }
+        if (sqlite3_bind_int(stmt, 2, todo_list[i].id) != SQLITE_OK) // Bind old id
+        {
+            err("Failed to bind id: %s\n", sqlite3_errmsg(database));
+            sqlite3_finalize(stmt);
+            return SQLITE_ERROR;
+        }
+
+        int rc = execute_statement(stmt, "rearrange_todo");
+        if (rc != SQLITE_DONE)
+        {
+            err("Execution failed with error %s", sqlite3_errmsg(database));
+            sqlite3_finalize(stmt);
+            return SQLITE_ERROR;
+        }
+        else
+        {
+            okay("Updated id of todo %i successfully", i);
+        }
+
+        sqlite3_reset(stmt);
+    }
+    sqlite3_finalize(stmt);
+    return SQLITE_OK;
+}
+
+// COMPOSED SQL REQUEST
 
 int fetch_todo(sqlite3_stmt* stmt, todo_type todo_list[])
 {
@@ -283,18 +323,11 @@ int fetch_todo(sqlite3_stmt* stmt, todo_type todo_list[])
 
 // COMPOSED SQL REQUEST
 
-int fetch_todos(const size_t table_size,int line_to_print,  char* string)
+int fetch_todos(const size_t table_size, todo_type todo_list[])
 {
-    info("Fetching %d rows from table and printing %d lines", table_size, line_to_print);
+    info("Fetching %d rows from table", table_size);
     const char sql[128] = "SELECT * from todos";
 
-    if (table_size < line_to_print)
-    {
-        warn("Line to print bigger than table size. Reduced to fit");
-        line_to_print = table_size;
-    }
-
-    todo_type todo_list[table_size] = {};
     // Prepare the SQL statement
     sqlite3_stmt* stmt = prepare_statement(sql);
     if (!stmt)
@@ -312,6 +345,13 @@ int fetch_todos(const size_t table_size,int line_to_print,  char* string)
     }
 
     sqlite3_finalize(stmt);
+
+    return rc;
+}
+
+// OTHERS
+int format_string(int line_to_print, todo_type todo_list[], char* string)
+{
     for (unsigned i = 0; i < line_to_print; ++i)
     {
         if (todo_list[i].timestamp) // if todo_element is not default
@@ -328,6 +368,5 @@ int fetch_todos(const size_t table_size,int line_to_print,  char* string)
             strncat(string, formatted_todo, line_to_print * sizeof(todo_list[0]) - strlen(string) - 1);
         }
     }
-
-    return rc == SQLITE_DONE;
+    return 1;
 }

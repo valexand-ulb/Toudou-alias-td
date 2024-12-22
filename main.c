@@ -17,11 +17,13 @@ typedef struct
 
 int function_list(int argc, char** argv)
 {
+    todo_type todo_list[table_size] = {};
     if (argc == 2)
     {
         info("function_list with default arg");
         char string[MAX_BUFFER_SIZE * MAX_PRINT_LINE] = "There is no todo left\0";
-        fetch_todos(table_size, MAX_PRINT_LINE, string);
+        fetch_todos(table_size, todo_list);
+        format_string(MAX_PRINT_LINE, todo_list, string);
         printf("%s", string);
     }
     else if (argc == 3)
@@ -34,7 +36,8 @@ int function_list(int argc, char** argv)
             maxline = 3;
         }
         char string[MAX_BUFFER_SIZE * maxline];
-        fetch_todos(table_size, maxline, string);
+        fetch_todos(table_size, todo_list);
+        format_string(maxline, todo_list, string);
         printf("%s", string);
     }
 
@@ -50,13 +53,25 @@ int function_add(int argc, char** argv)
 int function_done(int argc, char** argv)
 {
     info("Remove task");
+
+    // remove specific todos
     const unsigned id = atoi(argv[2]);
-    if ( id > table_size || !remove_todo(id))
+    if ( id > table_size || remove_todo(id))
     {
         warn("todo not removed");
         printf("No todo affected\n");
+    } else
+    {
+        info("Removed task");
+        printf("todo of id '%d' removed\n", id);
+        table_size--;
+
+        // fetch all todos to reorder them
+        todo_type todo_list[table_size] = {}; //
+        fetch_todos(table_size, todo_list);
+        rearrange_todo(table_size, todo_list);
     }
-    printf("todo of id '%d' removed\n", id);
+
     function_list(2, argv);
     return 0;
 }
@@ -104,11 +119,11 @@ int main(int argc, char** argv)
     table_size = get_table_size();
     info("table size: %d\n", table_size);
 
-    if (table_size <= 10)
-    {
-        _debug_fill_database();
-        table_size = get_table_size();
-    }
+    // if (table_size < 10)
+    // {
+    //     _debug_fill_database();
+    //     table_size = get_table_size();
+    // }
 
     if (!check_arguments(argc, argv))
     {

@@ -12,8 +12,15 @@
 #define MAX_BUFFER_SIZE 256
 
 #include <stddef.h>
-#include <stdint.h>
+#include <time.h>
+
 // GLOBAL VARIABLE
+typedef struct
+{
+    int id;
+    char content[256];
+    time_t timestamp;
+} todo_type;
 
 // BASE STATEMENT FUNCTIONS
 int initialize_database();
@@ -25,10 +32,12 @@ int get_table_size();
 int add_todo(const char* event, long long timestamp);
 
 int remove_todo(const unsigned todo_id);
-
+int rearrange_todo(int table_size, todo_type todo_list[]);
 // COMPOSED SQL REQUEST
 
-int fetch_todos(const size_t table_size, int max_line_printed, char *string);
+int fetch_todos(const size_t table_size, todo_type todo_list[]);
 
+// OTHERS
+int format_string(int line_to_print, todo_type todo_list[], char* string);
 
 #endif  // DATABASE_H
