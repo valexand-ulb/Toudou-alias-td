@@ -15,7 +15,8 @@ add_executable(td main.c
         database.c
         log.h
         utils.c
-        utils.h)
+        utils.h
+        constant.h)
 
 target_link_libraries(td ${SQLITE3_LIBRARY})
 

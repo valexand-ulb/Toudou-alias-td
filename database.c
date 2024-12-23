@@ -42,7 +42,7 @@ int execute_statement(sqlite3_stmt* stmt, const char* command)
     const int rc = sqlite3_step(stmt);
     if (rc == SQLITE_DONE)
     {
-        info("[%s] executed successfully.", command);
+        okay("[%s] executed successfully.", command);
     }
     // TODO : Verify if coherent for managing errors
     // else if (rc == SQLITE_ROW)
@@ -135,9 +135,9 @@ int initialize_database()
 
 int close_database() { return sqlite3_close(database); }
 
-void _debug_fill_database()
+void _debug_fill_database(int num)
 {
-    for (unsigned i = 0; i < 10; ++i)
+    for (unsigned i = 0; i < num; ++i)
     {
         char event[128];
         snprintf(event, sizeof(event), "debug_text_%d", i);
@@ -289,6 +289,46 @@ int rearrange_todo(int table_size, todo_type todo_list[])
 
         sqlite3_reset(stmt);
     }
+    // update SQLITE Sequence number
+    if (updtate_sequence_number(table_size) != SQLITE_OK)
+    {
+        err("Failed to update sequence number");
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
+    }
+    else
+    {
+        okay("Updated sequence number successfully");
+    }
+
+    sqlite3_finalize(stmt);
+    return SQLITE_OK;
+}
+
+int updtate_sequence_number(int new_sequence_number)
+{
+    const char* sql_update = "UPDATE SQLITE_SEQUENCE SET SEQ=? WHERE NAME='todos';";
+    sqlite3_stmt* stmt = prepare_statement(sql_update);
+    if (!stmt)
+    {
+        err("Failed to prepare statement: %s", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
+    }
+    if (sqlite3_bind_int(stmt, 1, new_sequence_number) != SQLITE_OK)
+    {
+        err("Failed to bind sequence_number: %s\n", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
+    }
+    const int rc = execute_statement(stmt, "updtate_sequence_number");
+    if (rc != SQLITE_DONE)
+    {
+        err("Execution failed with error %s", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
+    }
+
     sqlite3_finalize(stmt);
     return SQLITE_OK;
 }

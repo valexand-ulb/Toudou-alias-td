@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "constant.h"
 #include "database.h"
 #include "log.h"
 
@@ -12,7 +13,7 @@ typedef struct
     const char* command;
     int argc_required;
     int (*predicate)(int, char**); // function attributed to an argument
-    int predicate_type;
+    const char * error_message;
 } Command;
 
 int function_list(int argc, char** argv)
@@ -82,29 +83,50 @@ int function_time(int argc, char** argv)
     return 0;
 }
 
+int function_debug_fill(int argc, char** argv)
+{
+    info("Fill database task");
+    _debug_fill_database(atoi(argv[2]));
+    return 0;
+}
+
 // Array of supported commands
 static const Command commands[] = {
-    {"list", 2, function_list},
-    {"list", 3, function_list},
-    {"add", 4, function_add},
-    {"done", 3, function_done},
-    {"time", 3, function_time},
+    {"list", 2, function_list, ERROR_LIST},
+    {"list", 3, function_list, ERROR_LIST},
+    {"add", 4, function_add, ERROR_ADD},
+    {"done", 3, function_done, ERROR_DONE},
+    {"time", 3, function_time, ERROR_TIME},
+    {"debug_fill", 3, function_debug_fill, ERROR_FILL},
 };
 
 #define COMMAND_COUNT (sizeof(commands) / sizeof(commands[0]))
 
 int check_arguments(int argc, char** argv)
 {
+    int command_failed = -1;
     for (size_t i = 0; i < COMMAND_COUNT; ++i)
     {
-        if (argc == commands[i].argc_required &&
-            strcmp(argv[1], commands[i].command) == 0)
+        if (strcmp(argv[1], commands[i].command) == 0)
         {
-            // function execution here
-            commands[i].predicate(argc, argv);
-            return 1;
+            if (argc == commands[i].argc_required)
+            {
+                okay("Command %s with correct parameters", commands[i].command);
+                commands[i].predicate(argc, argv);
+                return 1;
+            }
+            else
+                command_failed = i;
         }
     }
+    if (command_failed > 0)
+    {
+        err("Command %s with invalid arguments", commands[command_failed].command);
+        printf("Command %s with invalid arguments:\n", commands[command_failed].command);
+        printf("%s\n", commands[command_failed].error_message);
+        return 1;
+    }
+    err("Unrecognized command\n");
     return 0;
 }
 
@@ -119,11 +141,6 @@ int main(int argc, char** argv)
     table_size = get_table_size();
     info("table size: %d\n", table_size);
 
-    // if (table_size < 10)
-    // {
-    //     _debug_fill_database();
-    //     table_size = get_table_size();
-    // }
 
     if (!check_arguments(argc, argv))
     {
