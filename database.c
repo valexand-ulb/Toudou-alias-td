@@ -139,9 +139,10 @@ void _debug_fill_database(int num)
 {
     for (unsigned i = 0; i < num; ++i)
     {
-        char event[128];
-        snprintf(event, sizeof(event), "debug_text_%d", i);
-        add_todo(event, (unsigned long)time(NULL));
+
+        todo_type todo = {0, "", (unsigned long) time(NULL)};
+        snprintf(todo.content, sizeof(todo.content), "debug_text_%d", i);
+        add_todo(&todo);
     }
 }
 
@@ -174,37 +175,34 @@ int get_table_size()
     return row_count;
 }
 
-int add_todo(const char* content, const long long timestamp)
+int add_todo(const todo_type *todo)
 {
-    const char* sql =
-        "INSERT INTO todos (content, datetime) VALUES (?,?);";
+    const char* sql = "INSERT INTO todos (content, datetime) VALUES (?,?)";
 
-    // Prepare the SQL statement
     sqlite3_stmt* stmt = prepare_statement(sql);
     if (!stmt)
     {
         err("Failed to prepare statement: %s", sqlite3_errmsg(database));
-    };
+        return SQLITE_ERROR;
+    }
 
-    if (sqlite3_bind_text(stmt, 1, content, -1, SQLITE_STATIC) != SQLITE_OK)
+    if (sqlite3_bind_text(stmt, 1, todo->content, -1, SQLITE_STATIC))
     {
         err("Failed to bind content: %s\n", sqlite3_errmsg(database));
         sqlite3_finalize(stmt);
-        return 1;
+        return SQLITE_ERROR;
     }
-    if (sqlite3_bind_int64(stmt, 2, timestamp) != SQLITE_OK)
+
+    if (sqlite3_bind_int64(stmt,2, todo->timestamp))
     {
         err("Failed to bind datetime: %s\n", sqlite3_errmsg(database));
         sqlite3_finalize(stmt);
-        return 1;
+        return SQLITE_ERROR;
     }
 
-    // Execute the statement
     const int rc = execute_statement(stmt, "add_todo");
-
-    // Finalize the statement and close the database
     sqlite3_finalize(stmt);
-    return rc == SQLITE_DONE;
+    return rc;
 }
 
 int remove_todo(const unsigned todo_id)

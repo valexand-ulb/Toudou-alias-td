@@ -48,6 +48,12 @@ int function_list(int argc, char** argv)
 int function_add(int argc, char** argv)
 {
     info("Add task");
+    todo_type todo;
+    snprintf(todo.content, sizeof(todo.content), "%s", argv[2]);
+    // TODO : timestamp management
+    todo.timestamp = (unsigned long) time(NULL);
+
+    add_todo(&todo);
     return 0;
 }
 
