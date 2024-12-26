@@ -6,6 +6,9 @@
 #define UTILS_H
 #include <time.h>
 
-int timestamp_to_string(time_t timestamp,char *buffer, size_t buffer_size);
 int expand_tilde(const char* path, char* expanded_path, size_t size);
+
+int manage_time_arg(const char *argument, long int *value);
+
+int timestamp_to_string(time_t timestamp,char *buffer, size_t buffer_size);
 #endif //UTILS_H

@@ -4,6 +4,7 @@
 #include "constant.h"
 #include "database.h"
 #include "log.h"
+#include "utils.h"
 
 
 int table_size = 0;
@@ -50,8 +51,10 @@ int function_add(int argc, char** argv)
     info("Add task");
     todo_type todo;
     snprintf(todo.content, sizeof(todo.content), "%s", argv[2]);
-    // TODO : timestamp management
-    todo.timestamp = (unsigned long) time(NULL);
+
+    todo.timestamp = TIMESTAMP_NOW; // time will be added over current timestamp
+
+    manage_time_arg(argv[3], &todo.timestamp);
 
     add_todo(&todo);
     return 0;
