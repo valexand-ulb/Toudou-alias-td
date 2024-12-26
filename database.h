@@ -35,6 +35,7 @@ int remove_todo(const unsigned todo_id);
 int rearrange_todo(int table_size, todo_type todo_list[]);
 
 int updtate_sequence_number(int new_sequence_number);
+int update_time(const unsigned id, const long int newtimestamp);
 
 
 // COMPOSED SQL REQUEST

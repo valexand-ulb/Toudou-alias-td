@@ -14,9 +14,6 @@
 sqlite3* database = NULL;
 
 
-
-
-
 // BASE STATEMENT FUNCTIONS
 
 sqlite3_stmt* prepare_statement(const char* sql)
@@ -120,7 +117,7 @@ int initialize_database()
     }
 
     // Open the SQLite database
-    int rc = sqlite3_open(fullpath, &database);
+    const int rc = sqlite3_open(fullpath, &database);
     if (rc != SQLITE_OK)
     {
         err("Error opening database at '%s': %s", fullpath, sqlite3_errmsg(database));
@@ -140,7 +137,7 @@ void _debug_fill_database(int num)
     for (unsigned i = 0; i < num; ++i)
     {
 
-        todo_type todo = {0, "", (unsigned long) time(NULL)};
+        todo_type todo = {0, "", time(NULL)};
         snprintf(todo.content, sizeof(todo.content), "debug_text_%d", i);
         add_todo(&todo);
     }
@@ -164,11 +161,11 @@ int get_table_size()
     {
         // Get the count result from the first column
         row_count = sqlite3_column_int(stmt, 0);
-        info("Number of rows in 'todos': %d\n", row_count);
+        info("Number of rows in 'todos': %d", row_count);
     }
     else
     {
-        err("Failed to execute statement: %s\n", sqlite3_errmsg(database));
+        err("Failed to execute statement: %s", sqlite3_errmsg(database));
     }
 
     sqlite3_finalize(stmt);
@@ -218,6 +215,7 @@ int remove_todo(const unsigned todo_id)
         return SQLITE_ERROR;
     }
 
+
     if (sqlite3_bind_int(stmt, 1, todo_id) != SQLITE_OK)
     {
         err("Failed to bind id: %s\n", sqlite3_errmsg(database));
@@ -259,7 +257,7 @@ int rearrange_todo(int table_size, todo_type todo_list[])
 
     for (unsigned i = 0; i < table_size; ++i)
     {
-        info("rearranging todo of id %i and new id %i", todo_list[i], i+1);
+        info("rearranging todo of id %i and new id %i", todo_list[i].id, i+1);
         if (sqlite3_bind_int(stmt, 1, i+1) != SQLITE_OK) // Bind new id
         {
             err("Failed to bind id: %s\n", sqlite3_errmsg(database));
@@ -331,6 +329,39 @@ int updtate_sequence_number(int new_sequence_number)
     return SQLITE_OK;
 }
 
+int update_time(const unsigned id, const long int newtimestamp)
+{
+    const char* sql_update = "UPDATE todos SET datetime=? WHERE id=?;";
+
+    sqlite3_stmt* stmt = prepare_statement(sql_update);
+    if (!stmt)
+    {
+        err("Failed to prepare statement: %s", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
+    }
+    if (sqlite3_bind_int64(stmt, 1, newtimestamp) != SQLITE_OK)
+    {
+        err("Failed to bind timestamp: %s\n", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
+    }
+    if (sqlite3_bind_int(stmt, 2, id) != SQLITE_OK)
+    {
+        err("Failed to bind id: %s\n", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
+    }
+    const int rc = execute_statement(stmt, "update_time");
+    if (rc != SQLITE_DONE)
+    {
+        err("Execution failed with error %s", sqlite3_errmsg(database));
+        sqlite3_finalize(stmt);
+        return SQLITE_ERROR;
+    }
+    return SQLITE_OK;
+}
+
 // COMPOSED SQL REQUEST
 
 int fetch_todo(sqlite3_stmt* stmt, todo_type todo_list[])
@@ -346,10 +377,11 @@ int fetch_todo(sqlite3_stmt* stmt, todo_type todo_list[])
 
         todo_list[i].timestamp = (time_t)sqlite3_column_int64(stmt, 2);
 
-        char print_str[32];
-        timestamp_to_string(todo_list[i].timestamp, print_str, sizeof(print_str));
+        char *print_str = ctime(&todo_list[i].timestamp);
+        print_str[sizeof(print_str) - 1] = '\0';
+        //timestamp_to_string(todo_list[i].timestamp, print_str, sizeof(print_str));
 
-        info("Todo %d: %s at %s ",
+        info("Todo %d: %s at %s",
              todo_list[i].id,
              todo_list[i].content,
              print_str);
@@ -363,7 +395,7 @@ int fetch_todo(sqlite3_stmt* stmt, todo_type todo_list[])
 
 int fetch_todos(const size_t table_size, todo_type todo_list[])
 {
-    info("Fetching %d rows from table", table_size);
+    info("Fetching %lu rows from table", table_size);
     const char sql[128] = "SELECT * from todos";
 
     // Prepare the SQL statement
@@ -378,7 +410,7 @@ int fetch_todos(const size_t table_size, todo_type todo_list[])
 
     if (rc != SQLITE_DONE)
     {
-        err("Error executing query: %s\n", sqlite3_errmsg(database));
+        err("Error executing query: %s", sqlite3_errmsg(database));
         return SQLITE_ERROR;
     }
 
@@ -396,11 +428,11 @@ int format_string(int line_to_print, todo_type todo_list[], char* string)
         {
             if (i == 0) strcpy(string, ""); // reset string
             char formatted_todo[256];
-            char datetime_str[32];
+            char *datetime_str = ctime(&todo_list[i].timestamp);
 
-            timestamp_to_string(todo_list[i].timestamp, datetime_str, sizeof(datetime_str));
+            //timestamp_to_string(todo_list[i].timestamp, datetime_str, sizeof(datetime_str));
 
-            snprintf(formatted_todo, sizeof(formatted_todo), "%d : %s - %s\n",
+            snprintf(formatted_todo, sizeof(formatted_todo), "%d : %s - %s",
                      todo_list[i].id, todo_list[i].content, datetime_str);
 
             strncat(string, formatted_todo, line_to_print * sizeof(todo_list[0]) - strlen(string) - 1);
