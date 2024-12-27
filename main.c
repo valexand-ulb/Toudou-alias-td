@@ -6,8 +6,7 @@
 #include "log.h"
 #include "utils.h"
 
-
-int table_size = 0;
+size_t TABLE_SIZE = 0;
 
 // Define a structure for mapping commands to actions
 typedef struct
@@ -20,12 +19,12 @@ typedef struct
 
 int function_list(const int argc, char** argv)
 {
-    todo_type todo_list[table_size] = {};
+    todo_type todo_list[TABLE_SIZE] = {};
     if (argc == 2)
     {
         info("function_list with default arg");
         char string[MAX_BUFFER_SIZE * MAX_PRINT_LINE] = "There is no todo left\n\0";
-        fetch_todos(table_size, todo_list);
+        fetch_todos(TABLE_SIZE, todo_list);
         format_string(MAX_PRINT_LINE, todo_list, string);
         printf("%s", string);
     }
@@ -33,13 +32,18 @@ int function_list(const int argc, char** argv)
     {
         info("function_list with int arg");
         int maxline = atoi(argv[2]);
+        if (!maxline || maxline < 0)
+        {
+            err("argument is not an unsigned int");
+            return 1;
+        }
         if (maxline > get_table_size())
         {
             err("The number of todo asked is too large, defaulting to 3");
             maxline = 3;
         }
         char string[MAX_BUFFER_SIZE * maxline];
-        fetch_todos(table_size, todo_list);
+        fetch_todos(TABLE_SIZE, todo_list);
         format_string(maxline, todo_list, string);
         printf("%s", string);
     }
@@ -67,7 +71,13 @@ int function_done(int argc, char** argv)
 
     // remove specific todos
     const unsigned id = atoi(argv[2]);
-    if (id > table_size || remove_todo(id))
+    info("Remove task with id %u", id);
+    if (id < 1 || id > TABLE_SIZE)
+    {
+        err("The id is invalid");
+        return 1;
+    }
+    if (remove_todo(id))
     {
         warn("todo not removed");
         printf("No todo affected\n");
@@ -76,12 +86,12 @@ int function_done(int argc, char** argv)
     {
         info("Removed task");
         printf("todo of id '%d' removed\n", id);
-        table_size--;
+        TABLE_SIZE--;
 
         // fetch all todos to reorder them
-        todo_type todo_list[table_size] = {}; //
-        fetch_todos(table_size, todo_list);
-        rearrange_todo(table_size, todo_list);
+        todo_type todo_list[TABLE_SIZE] = {}; //
+        fetch_todos(TABLE_SIZE, todo_list);
+        rearrange_todo(TABLE_SIZE, todo_list);
     }
 
     function_list(2, argv);
@@ -91,25 +101,22 @@ int function_done(int argc, char** argv)
 int function_time(int argc, char** argv)
 {
     info("Modify time of a task");
-    todo_type todo_list[table_size] = {};
-    fetch_todos(table_size, todo_list);
+    todo_type todo_list[TABLE_SIZE] = {};
+    fetch_todos(TABLE_SIZE, todo_list);
 
     const unsigned id = atoi(argv[2]);
-    if (id > table_size)
+    if (!id || id > TABLE_SIZE)
     {
-        warn("todo not modified");
-        printf("No todo affected\n");
+        err("The id is invalid");
+        return 1;
     }
-    else
-    {
-        const todo_type todo = todo_list[id - 1]; // id-1 since id on term start from 1
-        time_t timestamp = todo.timestamp;
-        info("got todo of time %s", strtok(ctime(&todo.timestamp), "\n"));
-        manage_time_arg(argv[3], &timestamp);
-        info("Updated timestamp %s", strtok(ctime(&timestamp), "\n"));
-        update_time(id, timestamp);
-        function_list(2, argv);
-    }
+    const todo_type todo = todo_list[id - 1]; // id-1 since id on term start from 1
+    time_t timestamp = todo.timestamp;
+    info("got todo of time %s", strtok(ctime(&todo.timestamp), "\n"));
+    manage_time_arg(argv[3], &timestamp);
+    info("Updated timestamp %s", strtok(ctime(&timestamp), "\n"));
+    update_time(id, timestamp);
+    function_list(2, argv);
     return 0;
 }
 
@@ -148,8 +155,8 @@ int check_arguments(const int argc, char** argv)
             if (argc == commands[i].argc_required)
             {
                 okay("Command %s with correct parameters", commands[i].command);
-                commands[i].predicate(argc, argv);
-                return 1;
+                if (commands[i].predicate(argc, argv))
+                    command_failed = i;
             }
             command_failed = i;
         }
@@ -173,8 +180,8 @@ int main(const int argc, char** argv)
         exit(1);
     }
 
-    table_size = get_table_size();
-    info("table size: %d", table_size);
+    TABLE_SIZE = get_table_size();
+    info("table size: %d", TABLE_SIZE);
 
     if (!check_arguments(argc, argv))
     {
