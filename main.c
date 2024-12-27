@@ -8,13 +8,14 @@
 
 
 int table_size = 0;
+
 // Define a structure for mapping commands to actions
 typedef struct
 {
     const char* command;
     int argc_required;
     int (*predicate)(int, char**); // function attributed to an argument
-    const char * error_message;
+    const char* error_message;
 } Command;
 
 int function_list(const int argc, char** argv)
@@ -66,11 +67,12 @@ int function_done(int argc, char** argv)
 
     // remove specific todos
     const unsigned id = atoi(argv[2]);
-    if ( id > table_size || remove_todo(id))
+    if (id > table_size || remove_todo(id))
     {
         warn("todo not removed");
         printf("No todo affected\n");
-    } else
+    }
+    else
     {
         info("Removed task");
         printf("todo of id '%d' removed\n", id);
@@ -93,18 +95,18 @@ int function_time(int argc, char** argv)
     fetch_todos(table_size, todo_list);
 
     const unsigned id = atoi(argv[2]);
-    if ( id > table_size )
+    if (id > table_size)
     {
         warn("todo not modified");
         printf("No todo affected\n");
-    } else
+    }
+    else
     {
-        const todo_type todo = todo_list[id];
+        const todo_type todo = todo_list[id - 1]; // id-1 since id on term start from 1
         time_t timestamp = todo.timestamp;
-        info("got todo of time %s", ctime(&todo.timestamp));
-
+        info("got todo of time %s", strtok(ctime(&todo.timestamp), "\n"));
         manage_time_arg(argv[3], &timestamp);
-        info("Updated timestamp %s", ctime(&timestamp));
+        info("Updated timestamp %s", strtok(ctime(&timestamp), "\n"));
         update_time(id, timestamp);
         function_list(2, argv);
     }
@@ -133,6 +135,12 @@ static const Command commands[] = {
 int check_arguments(const int argc, char** argv)
 {
     int command_failed = -1;
+    if (argc == 1)
+    {
+        err("Missing command");
+        printf("Missing command\n");
+        return 0;
+    }
     for (size_t i = 0; i < COMMAND_COUNT; ++i)
     {
         if (strcmp(argv[1], commands[i].command) == 0)
@@ -143,8 +151,7 @@ int check_arguments(const int argc, char** argv)
                 commands[i].predicate(argc, argv);
                 return 1;
             }
-            else
-                command_failed = i;
+            command_failed = i;
         }
     }
     if (command_failed > 0)
@@ -169,12 +176,10 @@ int main(const int argc, char** argv)
     table_size = get_table_size();
     info("table size: %d", table_size);
 
-
     if (!check_arguments(argc, argv))
     {
         err("Error program Execution...");
         exit(1);
     }
-
     close_database();
 }

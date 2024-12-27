@@ -136,7 +136,6 @@ void _debug_fill_database(int num)
 {
     for (unsigned i = 0; i < num; ++i)
     {
-
         todo_type todo = {0, "", time(NULL)};
         snprintf(todo.content, sizeof(todo.content), "debug_text_%d", i);
         add_todo(&todo);
@@ -172,7 +171,7 @@ int get_table_size()
     return row_count;
 }
 
-int add_todo(const todo_type *todo)
+int add_todo(const todo_type* todo)
 {
     const char* sql = "INSERT INTO todos (content, datetime) VALUES (?,?)";
 
@@ -190,7 +189,7 @@ int add_todo(const todo_type *todo)
         return SQLITE_ERROR;
     }
 
-    if (sqlite3_bind_int64(stmt,2, todo->timestamp))
+    if (sqlite3_bind_int64(stmt, 2, todo->timestamp))
     {
         err("Failed to bind datetime: %s\n", sqlite3_errmsg(database));
         sqlite3_finalize(stmt);
@@ -258,7 +257,7 @@ int rearrange_todo(int table_size, todo_type todo_list[])
     for (unsigned i = 0; i < table_size; ++i)
     {
         info("rearranging todo of id %i and new id %i", todo_list[i].id, i+1);
-        if (sqlite3_bind_int(stmt, 1, i+1) != SQLITE_OK) // Bind new id
+        if (sqlite3_bind_int(stmt, 1, i + 1) != SQLITE_OK) // Bind new id
         {
             err("Failed to bind id: %s\n", sqlite3_errmsg(database));
             sqlite3_finalize(stmt);
@@ -377,7 +376,7 @@ int fetch_todo(sqlite3_stmt* stmt, todo_type todo_list[])
 
         todo_list[i].timestamp = (time_t)sqlite3_column_int64(stmt, 2);
 
-        char *print_str = ctime(&todo_list[i].timestamp);
+        char* print_str = ctime(&todo_list[i].timestamp);
         print_str[sizeof(print_str) - 1] = '\0';
         //timestamp_to_string(todo_list[i].timestamp, print_str, sizeof(print_str));
 
@@ -428,7 +427,7 @@ int format_string(int line_to_print, todo_type todo_list[], char* string)
         {
             if (i == 0) strcpy(string, ""); // reset string
             char formatted_todo[256];
-            char *datetime_str = ctime(&todo_list[i].timestamp);
+            char* datetime_str = ctime(&todo_list[i].timestamp);
 
             //timestamp_to_string(todo_list[i].timestamp, datetime_str, sizeof(datetime_str));
 
